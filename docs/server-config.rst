@@ -20,16 +20,8 @@ application logs with Heroku request logs.
 Nginx
 -----
 
-There's no built-in option in Nginx to generate a unique request id, but there
-are several modules that provide this functionality:
-
-    - `nginx_requestid <https://github.com/hhru/nginx_requestid>`_
-    - `nginx-x-rid-header <https://github.com/newobj/nginx-x-rid-header>`_
-
-Unfortunately this require Nginx binary recompilation.
-
-Alternatively, if your Nginx has Lua scripting enabled, you can generate a random id
-and add it to server logs using the following snippets:
+As of version 1.11.0, Nginx supports $request_id natively.
+See `http://nginx.org/en/docs/http/ngx_http_core_module.html`_ for more info.
 
 .. code-block:: nginx
 
@@ -43,7 +35,6 @@ and add it to server logs using the following snippets:
         ...
     }
 
-.. code-block:: lua
 
     server {
         listen       80;
@@ -52,21 +43,11 @@ and add it to server logs using the following snippets:
         access_log  logs/host.access.log  main;
 
         location / {
-            set_by_lua $request_id '
-                local function random_id()
-                    local charset = "0123456789abcdefghijklmnopqrstuvwxyz"
-                    local template = "xxxx-xxxxxxxx-xxxxxxxx"
-                    local range = charset:len()
-                    return string.gsub(template, "x", function (c)
-                        return string.char(charset:byte(math.random(1, range)))
-                    end)
-                end
-                local request_id = random_id()
-                ngx.req.set_header("X-Request-Id", request_id)
-                return request_id
-            ';
+         ...
 
-            ...
+          proxy_set_header X-Request-Id $request_id;
+
+         ...
         }
 
 Apache
